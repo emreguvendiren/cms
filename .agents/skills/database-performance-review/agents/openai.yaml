@@ -1,0 +1,4 @@
+interface:
+  display_name: "Database Performance Review"
+  short_description: "Review database query and transaction changes"
+  default_prompt: "Use $database-performance-review to review this persistence change for query, index, pagination, and transaction risks."

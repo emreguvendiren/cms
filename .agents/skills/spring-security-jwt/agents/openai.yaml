@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spring Security JWT"
+  short_description: "Secure Spring Boot JWT authentication workflows"
+  default_prompt: "Use $spring-security-jwt to design or review this Spring Security authentication change."

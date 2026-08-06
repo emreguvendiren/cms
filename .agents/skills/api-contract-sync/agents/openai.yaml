@@ -1,0 +1,4 @@
+interface:
+  display_name: "API Contract Sync"
+  short_description: "Keep OpenAPI and generated clients synchronized"
+  default_prompt: "Use $api-contract-sync to synchronize this API change across the contract, backend, and frontend client."

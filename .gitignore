@@ -1,0 +1,58 @@
+# Dependencies and local package caches
+node_modules/
+.pnpm-store/
+.m2/
+
+# Build and test output
+dist/
+dist-ssr/
+target/
+build/
+coverage/
+.vite/
+
+# Environment files and local secrets
+.env
+.env.*
+!.env.example
+*.local
+
+# Logs and runtime files
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.pid
+
+# IDE and editor metadata
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.classpath
+.project
+.settings/
+.factorypath
+.apt_generated/
+.springBeans
+.sts4-cache/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.orig
+*~
