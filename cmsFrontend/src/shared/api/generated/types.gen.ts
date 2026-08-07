@@ -100,6 +100,22 @@ export type EnrolledStudent = {
     paymentStatus: PaymentStatus;
     expectedPaymentDate?: string | null;
     note?: string | null;
+    payments: Array<EnrollmentPayment>;
+    version: number;
+};
+
+export type EnrollmentPayment = {
+    id: string;
+    installmentNumber: number;
+    installmentTotal: number;
+    amount: number;
+    dueDate?: string | null;
+    status: PaymentStatus;
+    paidAt?: string | null;
+    version: number;
+};
+
+export type ReceiveEnrollmentPaymentRequest = {
     version: number;
 };
 
@@ -832,6 +848,51 @@ export type UpdateClassEnrollmentResponses = {
 };
 
 export type UpdateClassEnrollmentResponse = UpdateClassEnrollmentResponses[keyof UpdateClassEnrollmentResponses];
+
+export type ReceiveEnrollmentPaymentData = {
+    body: ReceiveEnrollmentPaymentRequest;
+    path: {
+        classId: string;
+        enrollmentId: string;
+        paymentId: string;
+    };
+    query?: never;
+    url: '/api/classes/{classId}/enrollments/{enrollmentId}/payments/{paymentId}/receive';
+};
+
+export type ReceiveEnrollmentPaymentErrors = {
+    /**
+     * Invalid request
+     */
+    400: ApiError;
+    /**
+     * Authentication failed
+     */
+    401: ApiError;
+    /**
+     * Authenticated user lacks the required authority
+     */
+    403: ApiError;
+    /**
+     * Referenced resource was not found
+     */
+    404: ApiError;
+    /**
+     * Unique code or resource state conflict
+     */
+    409: ApiError;
+};
+
+export type ReceiveEnrollmentPaymentError = ReceiveEnrollmentPaymentErrors[keyof ReceiveEnrollmentPaymentErrors];
+
+export type ReceiveEnrollmentPaymentResponses = {
+    /**
+     * Payment marked as received
+     */
+    200: EnrolledStudent;
+};
+
+export type ReceiveEnrollmentPaymentResponse = ReceiveEnrollmentPaymentResponses[keyof ReceiveEnrollmentPaymentResponses];
 
 export type ListStudentsData = {
     body?: never;

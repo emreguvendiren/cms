@@ -109,12 +109,26 @@ class TrainingApiIntegrationTests extends IntegrationTestSupport {
                 .andExpect(jsonPath("$.registrationFee").value(18500.50))
                 .andExpect(jsonPath("$.paymentPlan").value("CASH"))
                 .andExpect(jsonPath("$.installmentCount").doesNotExist())
-                .andExpect(jsonPath("$.paymentStatus").value("COMPLETED"));
+                .andExpect(jsonPath("$.paymentStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.payments.length()").value(1))
+                .andExpect(jsonPath("$.payments[0].amount").value(18500.50))
+                .andExpect(jsonPath("$.payments[0].status").value("COMPLETED"))
+                .andExpect(jsonPath("$.payments[0].paidAt").isNotEmpty());
 
         var updatedStudent = students.findById(student.getId()).orElseThrow();
         Assertions.assertEquals(StudentStatus.ACTIVE, updatedStudent.getStatus());
         Assertions.assertEquals("AutoCAD 2D Teknik Çizim", updatedStudent.getActiveCourse());
         Assertions.assertEquals(1, enrollments.countByCourseClassIdAndStatusNot(item.getId(), EnrollmentStatus.CANCELLED));
+
+        var createdEnrollment = enrollments.findByCourseClassIdOrderByStudentFullNameAsc(item.getId()).getFirst();
+        String changedPaidPlan = """
+                {"registrationFee":19000,"paymentPlan":"CASH","paymentStatus":"COMPLETED","version":0}
+                """;
+        mvc.perform(put("/api/classes/{classId}/enrollments/{enrollmentId}", item.getId(), createdEnrollment.getId())
+                        .with(jwt().jwt(token -> token.subject(UUID.randomUUID().toString()))
+                                .authorities(new SimpleGrantedAuthority("class:enrollment:update")))
+                        .contentType(MediaType.APPLICATION_JSON).content(changedPaidPlan))
+                .andExpect(status().isConflict());
     }
 
     @Test void enrollsStudentWithInstallmentPlanAndReturnsItInClassDetail() throws Exception {
@@ -131,7 +145,11 @@ class TrainingApiIntegrationTests extends IntegrationTestSupport {
         mvc.perform(post("/api/classes/{id}/enrollments", item.getId()).with(authorized)
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated()).andExpect(jsonPath("$.installmentCount").value(6))
-                .andExpect(jsonPath("$.firstPaymentDate").value("2026-08-15"));
+                .andExpect(jsonPath("$.firstPaymentDate").value("2026-08-15"))
+                .andExpect(jsonPath("$.payments.length()").value(6))
+                .andExpect(jsonPath("$.payments[0].dueDate").value("2026-08-15"))
+                .andExpect(jsonPath("$.payments[5].dueDate").value("2027-01-15"))
+                .andExpect(jsonPath("$.payments[0].amount").value(4000));
 
         mvc.perform(get("/api/classes/{id}", item.getId())
                         .with(jwt().jwt(token -> token.subject(UUID.randomUUID().toString()))
@@ -159,6 +177,8 @@ class TrainingApiIntegrationTests extends IntegrationTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.registrationFee").value(2250))
                 .andExpect(jsonPath("$.expectedPaymentDate").value("2026-08-25"))
+                .andExpect(jsonPath("$.payments.length()").value(1))
+                .andExpect(jsonPath("$.payments[0].dueDate").value("2026-08-25"))
                 .andExpect(jsonPath("$.version").value(1));
 
         mvc.perform(delete("/api/classes/{classId}/enrollments/{enrollmentId}", item.getId(), enrollment.getId())
@@ -170,6 +190,39 @@ class TrainingApiIntegrationTests extends IntegrationTestSupport {
                                 .authorities(new SimpleGrantedAuthority("class:enrollment:delete"))))
                 .andExpect(status().isNoContent());
         Assertions.assertFalse(enrollments.existsById(enrollment.getId()));
+    }
+
+    @Test void receivesEnrollmentPaymentAndProtectsTheFinancialMutation() throws Exception {
+        var item = newClass(activeCourse());
+        var student = prospectiveStudent("receive-payment@example.com");
+        var enrollment = new ClassEnrollmentJpaEntity(UUID.randomUUID(), item, student, EnrollmentStatus.ACTIVE,
+                new BigDecimal("1000"), PaymentPlanType.CASH, null, null, PaymentStatus.PENDING,
+                LocalDate.parse("2026-08-20"), null);
+        var payment = new EnrollmentPaymentJpaEntity(UUID.randomUUID(), enrollment, 1, 1,
+                new BigDecimal("1000"), LocalDate.parse("2026-08-20"), PaymentStatus.PENDING, null);
+        enrollment.replacePayments(List.of(payment));
+        enrollment = enrollments.saveAndFlush(enrollment);
+        var path = "/api/classes/{classId}/enrollments/{enrollmentId}/payments/{paymentId}/receive";
+
+        mvc.perform(post(path, item.getId(), enrollment.getId(), payment.getId())
+                        .with(jwt().jwt(token -> token.subject(UUID.randomUUID().toString()))
+                                .authorities(new SimpleGrantedAuthority("class:read")))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}"))
+                .andExpect(status().isForbidden());
+        mvc.perform(post(path, item.getId(), enrollment.getId(), payment.getId())
+                        .with(jwt().jwt(token -> token.subject(UUID.randomUUID().toString()))
+                                .authorities(new SimpleGrantedAuthority("class:enrollment:update")))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.paymentStatus").value("COMPLETED"))
+                .andExpect(jsonPath("$.payments[0].status").value("COMPLETED"))
+                .andExpect(jsonPath("$.payments[0].paidAt").value(LocalDate.now().toString()))
+                .andExpect(jsonPath("$.payments[0].version").value(1));
+        mvc.perform(post(path, item.getId(), enrollment.getId(), payment.getId())
+                        .with(jwt().jwt(token -> token.subject(UUID.randomUUID().toString()))
+                                .authorities(new SimpleGrantedAuthority("class:enrollment:update")))
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}"))
+                .andExpect(status().isConflict());
     }
 
     @Test void enrollmentUpdateRejectsMissingAuthenticationWrongAuthorityAndStaleVersion() throws Exception {

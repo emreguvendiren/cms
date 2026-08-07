@@ -20,12 +20,15 @@ Relationship indexes are defined explicitly because PostgreSQL does not automati
 | `course_classes.course_id -> courses.id` | `idx_course_classes_course` | Course/class joins and parent-course delete checks |
 | `class_enrollments.class_id -> course_classes.id` | `idx_class_enrollments_class` | Class detail, enrollment count and parent-class checks |
 | `class_enrollments.student_id -> students.id` | `idx_class_enrollments_student` | Student enrollment history and student-side joins |
+| `enrollment_payments.enrollment_id -> class_enrollments.id` | `idx_enrollment_payments_enrollment` | Enrollment detail payment-plan loading and enrollment deletion cascade |
 | `refresh_sessions.user_id -> users.id` | `idx_refresh_session_user` | User session lookup and revocation operations |
 | `user_authorities.user_id -> users.id` | `idx_user_authorities_user` | Authority collection loading and user updates/deletes |
 | `students.phone_lookup_hash` | Unique index | Exact normalized-phone duplicate detection without decrypting values |
 | `students.status, students.deleted_at, students.full_name, students.id` | Composite list index | Active student filtering with deterministic pagination |
 
 `class_enrollments` also has the unique constraint `uk_class_enrollment_student (class_id, student_id)` to prevent duplicate enrollment. The explicit student-leading index remains necessary for student-side queries.
+
+`enrollment_payments` has `uk_enrollment_payment_sequence (enrollment_id, installment_number)` to prevent duplicate installment rows within one enrollment.
 
 ## Review checklist
 

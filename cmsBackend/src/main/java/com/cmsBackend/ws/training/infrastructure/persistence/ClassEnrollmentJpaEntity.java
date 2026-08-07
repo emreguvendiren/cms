@@ -7,6 +7,9 @@ import jakarta.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Entity
 @Table(name = "class_enrollments", uniqueConstraints = @UniqueConstraint(name = "uk_class_enrollment_student", columnNames = {"class_id", "student_id"}), indexes = {@Index(name="idx_class_enrollments_class", columnList="class_id"), @Index(name="idx_class_enrollments_student", columnList="student_id")})
@@ -22,6 +25,9 @@ public class ClassEnrollmentJpaEntity {
     @Enumerated(EnumType.STRING) @Column(name="payment_status", nullable=false, length=20, columnDefinition="varchar(20) default 'PENDING'") private PaymentStatus paymentStatus;
     @Column(name="expected_payment_date") private LocalDate expectedPaymentDate;
     @Column(length=1000) private String note;
+    @OneToMany(mappedBy = "enrollment", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("installmentNumber ASC")
+    private List<EnrollmentPaymentJpaEntity> payments = new ArrayList<>();
     @Version private long version;
     protected ClassEnrollmentJpaEntity() {}
     public ClassEnrollmentJpaEntity(UUID id, CourseClassJpaEntity courseClass, StudentJpaEntity student, EnrollmentStatus status){
@@ -41,10 +47,19 @@ public class ClassEnrollmentJpaEntity {
     public Integer getInstallmentCount(){return installmentCount;} public LocalDate getFirstPaymentDate(){return firstPaymentDate;}
     public PaymentStatus getPaymentStatus(){return paymentStatus;} public LocalDate getExpectedPaymentDate(){return expectedPaymentDate;}
     public String getNote(){return note;} public long getVersion(){return version;}
+    public List<EnrollmentPaymentJpaEntity> getPayments(){return Collections.unmodifiableList(payments);}
+    public void replacePayments(List<EnrollmentPaymentJpaEntity> nextPayments) {
+        payments.clear(); payments.addAll(nextPayments);
+    }
     public void updatePayment(BigDecimal registrationFee, PaymentPlanType paymentPlan, Integer installmentCount,
             LocalDate firstPaymentDate, PaymentStatus paymentStatus, LocalDate expectedPaymentDate, String note) {
         this.registrationFee=registrationFee; this.paymentPlan=paymentPlan; this.installmentCount=installmentCount;
         this.firstPaymentDate=firstPaymentDate; this.paymentStatus=paymentStatus;
         this.expectedPaymentDate=expectedPaymentDate; this.note=note;
+    }
+    public void refreshPaymentStatus() {
+        paymentStatus = !payments.isEmpty() && payments.stream()
+                .allMatch(payment -> payment.getStatus() == PaymentStatus.COMPLETED)
+                ? PaymentStatus.COMPLETED : PaymentStatus.PENDING;
     }
 }

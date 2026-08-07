@@ -6,6 +6,7 @@ import {
   createClassEnrollment as createClassEnrollmentRequest,
   updateClassEnrollment as updateClassEnrollmentRequest,
   deleteClassEnrollment as deleteClassEnrollmentRequest,
+  receiveEnrollmentPayment as receiveEnrollmentPaymentRequest,
   updateCourse as updateCourseRequest,
   deleteCourse as deleteCourseRequest,
   updateClass as updateClassRequest,
@@ -25,6 +26,7 @@ import {
   type ClassDetail,
   type CreateClassEnrollmentRequest,
   type UpdateClassEnrollmentRequest,
+  type ReceiveEnrollmentPaymentRequest,
   type EnrolledStudent,
   type Student,
   type StudentStatus,
@@ -108,6 +110,9 @@ export async function updateEnrollment(classId: string, enrollmentId: string, re
 export async function removeEnrollment(classId: string, enrollmentId: string): Promise<void> {
   await deleteClassEnrollmentRequest({ ...clientOptions(), path: { classId, enrollmentId } });
 }
+export async function receivePayment(classId: string, enrollmentId: string, paymentId: string, request: ReceiveEnrollmentPaymentRequest): Promise<EnrolledStudent> {
+  return (await receiveEnrollmentPaymentRequest({ ...clientOptions(), path: { classId, enrollmentId, paymentId }, body: request })).data;
+}
 
 export type {
   ClassPage,
@@ -123,6 +128,7 @@ export type {
   ClassDetail,
   CreateClassEnrollmentRequest,
   UpdateClassEnrollmentRequest,
+  ReceiveEnrollmentPaymentRequest,
   EnrolledStudent,
   PaymentPlanType,
   PaymentStatus,

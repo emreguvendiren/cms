@@ -5,6 +5,7 @@ import com.cmsBackend.ws.training.api.model.CreateClassRequest;
 import com.cmsBackend.ws.training.api.model.CreateClassEnrollmentRequest;
 import com.cmsBackend.ws.training.api.model.UpdateClassRequest;
 import com.cmsBackend.ws.training.api.model.UpdateClassEnrollmentRequest;
+import com.cmsBackend.ws.training.api.model.ReceiveEnrollmentPaymentRequest;
 import com.cmsBackend.ws.training.api.model.ClassDetailResponse;
 import com.cmsBackend.ws.training.api.model.PageResponse;
 import com.cmsBackend.ws.training.domain.ClassStatus;
@@ -15,12 +16,18 @@ import com.cmsBackend.ws.training.domain.PaymentStatus;
 import com.cmsBackend.ws.student.domain.StudentStatus;
 import com.cmsBackend.ws.common.security.audit.SecurityAuditService;
 import com.cmsBackend.ws.training.infrastructure.persistence.ClassEnrollmentJpaEntity;
+import com.cmsBackend.ws.training.infrastructure.persistence.EnrollmentPaymentJpaEntity;
 import com.cmsBackend.ws.training.infrastructure.persistence.CourseClassJpaEntity;
 import com.cmsBackend.ws.training.infrastructure.persistence.CourseClassRepository;
 import com.cmsBackend.ws.training.infrastructure.persistence.CourseRepository;
 import com.cmsBackend.ws.training.infrastructure.persistence.ClassEnrollmentRepository;
 import com.cmsBackend.ws.training.infrastructure.persistence.StudentRepository;
 import java.util.UUID;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.Objects;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -100,6 +107,9 @@ public class CourseClassService {
                 request.paymentPlan() == PaymentPlanType.CASH && request.paymentStatus() == PaymentStatus.PENDING
                         ? request.expectedPaymentDate() : null,
                 normalizeNote(request.note()));
+        enrollment.replacePayments(createPaymentSchedule(enrollment, request.registrationFee(), request.paymentPlan(),
+                request.installmentCount(), request.firstPaymentDate(), request.paymentStatus(),
+                request.expectedPaymentDate()));
         var saved = enrollments.saveAndFlush(enrollment);
         audit.classEnrollmentCreated(actorId, classId, student.getId());
         return ClassDetailResponse.EnrolledStudentResponse.from(saved);
@@ -113,6 +123,16 @@ public class CourseClassService {
         var enrollment = enrollments.findByIdAndCourseClassId(enrollmentId, classId)
                 .orElseThrow(TrainingNotFoundException::new);
         if (enrollment.getVersion() != request.version()) throw new TrainingConflictException();
+        boolean financialChanged = !Objects.equals(enrollment.getRegistrationFee(), request.registrationFee())
+                || enrollment.getPaymentPlan() != request.paymentPlan()
+                || !Objects.equals(enrollment.getInstallmentCount(), request.installmentCount())
+                || !Objects.equals(enrollment.getFirstPaymentDate(), request.firstPaymentDate())
+                || enrollment.getPaymentStatus() != request.paymentStatus()
+                || !Objects.equals(enrollment.getExpectedPaymentDate(), request.expectedPaymentDate());
+        if (financialChanged && enrollment.getPayments().stream()
+                .anyMatch(payment -> payment.getStatus() == PaymentStatus.COMPLETED)) {
+            throw new TrainingConflictException();
+        }
         enrollment.updatePayment(request.registrationFee(), request.paymentPlan(),
                 request.paymentPlan() == PaymentPlanType.INSTALLMENT ? request.installmentCount() : null,
                 request.paymentPlan() == PaymentPlanType.INSTALLMENT ? request.firstPaymentDate() : null,
@@ -120,8 +140,31 @@ public class CourseClassService {
                 request.paymentPlan() == PaymentPlanType.CASH && request.paymentStatus() == PaymentStatus.PENDING
                         ? request.expectedPaymentDate() : null,
                 normalizeNote(request.note()));
+        if (financialChanged) {
+            enrollment.replacePayments(createPaymentSchedule(enrollment, request.registrationFee(), request.paymentPlan(),
+                    request.installmentCount(), request.firstPaymentDate(), request.paymentStatus(),
+                    request.expectedPaymentDate()));
+        }
         var saved = enrollments.saveAndFlush(enrollment);
         audit.classEnrollmentChanged("update", actorId, classId, enrollment.getStudent().getId());
+        return ClassDetailResponse.EnrolledStudentResponse.from(saved);
+    }
+
+    @PreAuthorize("hasAuthority('class:enrollment:update')")
+    @Transactional
+    public ClassDetailResponse.EnrolledStudentResponse receivePayment(UUID classId, UUID enrollmentId,
+            UUID paymentId, ReceiveEnrollmentPaymentRequest request, UUID actorId) {
+        var enrollment = enrollments.findByIdAndCourseClassId(enrollmentId, classId)
+                .orElseThrow(TrainingNotFoundException::new);
+        var payment = enrollment.getPayments().stream().filter(item -> item.getId().equals(paymentId))
+                .findFirst().orElseThrow(TrainingNotFoundException::new);
+        if (payment.getVersion() != request.version() || payment.getStatus() == PaymentStatus.COMPLETED) {
+            throw new TrainingConflictException();
+        }
+        payment.markReceived(LocalDate.now());
+        enrollment.refreshPaymentStatus();
+        var saved = enrollments.saveAndFlush(enrollment);
+        audit.classEnrollmentChanged("payment_receive", actorId, classId, enrollment.getStudent().getId());
         return ClassDetailResponse.EnrolledStudentResponse.from(saved);
     }
 
@@ -201,5 +244,24 @@ public class CourseClassService {
 
     private String normalizeNote(String note) {
         return note == null || note.isBlank() ? null : note.trim();
+    }
+
+    private java.util.List<EnrollmentPaymentJpaEntity> createPaymentSchedule(
+            ClassEnrollmentJpaEntity enrollment, BigDecimal totalAmount, PaymentPlanType plan,
+            Integer installmentCount, LocalDate firstPaymentDate, PaymentStatus status,
+            LocalDate expectedPaymentDate) {
+        int count = plan == PaymentPlanType.INSTALLMENT ? installmentCount : 1;
+        BigDecimal regularAmount = totalAmount.divide(BigDecimal.valueOf(count), 2, RoundingMode.DOWN);
+        BigDecimal allocated = regularAmount.multiply(BigDecimal.valueOf(count - 1L));
+        var result = new ArrayList<EnrollmentPaymentJpaEntity>(count);
+        for (int index = 0; index < count; index++) {
+            BigDecimal amount = index == count - 1 ? totalAmount.subtract(allocated) : regularAmount;
+            LocalDate dueDate = plan == PaymentPlanType.INSTALLMENT
+                    ? firstPaymentDate.plusMonths(index) : expectedPaymentDate;
+            LocalDate paidAt = status == PaymentStatus.COMPLETED ? LocalDate.now() : null;
+            result.add(new EnrollmentPaymentJpaEntity(UUID.randomUUID(), enrollment, index + 1, count,
+                    amount, dueDate, status, paidAt));
+        }
+        return result;
     }
 }

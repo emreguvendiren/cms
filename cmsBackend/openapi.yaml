@@ -257,6 +257,24 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+  /api/classes/{classId}/enrollments/{enrollmentId}/payments/{paymentId}/receive:
+    post:
+      operationId: receiveEnrollmentPayment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: classId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: enrollmentId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: paymentId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/ReceiveEnrollmentPaymentRequest'}}}
+      responses:
+        '200': {description: Payment marked as received, content: {application/json: {schema: {$ref: '#/components/schemas/EnrolledStudent'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
   /api/students:
     get:
       operationId: listStudents
@@ -544,7 +562,7 @@ components:
         version: {type: integer, format: int64}
     EnrolledStudent:
       type: object
-      required: [id, enrollmentId, fullName, email, enrollmentStatus, registrationFee, paymentPlan, paymentStatus, version]
+      required: [id, enrollmentId, fullName, email, enrollmentStatus, registrationFee, paymentPlan, paymentStatus, payments, version]
       properties:
         id: {type: string, format: uuid}
         enrollmentId: {type: string, format: uuid}
@@ -559,7 +577,28 @@ components:
         paymentStatus: {$ref: '#/components/schemas/PaymentStatus'}
         expectedPaymentDate: {type: [string, 'null'], format: date}
         note: {type: [string, 'null'], maxLength: 1000}
+        payments:
+          type: array
+          maxItems: 24
+          items: {$ref: '#/components/schemas/EnrollmentPayment'}
         version: {type: integer, format: int64}
+    EnrollmentPayment:
+      type: object
+      required: [id, installmentNumber, installmentTotal, amount, status, version]
+      properties:
+        id: {type: string, format: uuid}
+        installmentNumber: {type: integer, minimum: 1, maximum: 24}
+        installmentTotal: {type: integer, minimum: 1, maximum: 24}
+        amount: {type: number, minimum: 0, multipleOf: 0.01}
+        dueDate: {type: [string, 'null'], format: date}
+        status: {$ref: '#/components/schemas/PaymentStatus'}
+        paidAt: {type: [string, 'null'], format: date}
+        version: {type: integer, format: int64}
+    ReceiveEnrollmentPaymentRequest:
+      type: object
+      required: [version]
+      properties:
+        version: {type: integer, format: int64, minimum: 0}
     PaymentPlanType:
       type: string
       enum: [CASH, INSTALLMENT]

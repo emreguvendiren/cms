@@ -113,6 +113,14 @@ has a documented product requirement.
 All colors, radii, typography, borders and shadows must come from the
 centralized theme.
 
+### Status tag standard
+
+- Green success tags must use the same centralized brand-green background as
+  primary actions, with white text and a matching brand-green border.
+- Use Ant Design's semantic `success` tag variant so this appearance is applied
+  centrally; do not recreate green tag colors inside feature-level CSS.
+- Keep the status text visible because color alone must not communicate state.
+
 Feature-level hardcoded color values are forbidden.
 
 Do not generate generic AI-style interfaces containing gradients,

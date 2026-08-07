@@ -19,3 +19,9 @@
   --app-chart-cyan: #0e7490;
   --app-shadow: 0 24px 64px rgb(15 23 42 / 10%);
 }
+
+.app-theme.ant-tag.ant-tag-success {
+  color: var(--app-surface) !important;
+  background: var(--app-brand);
+  border-color: var(--app-brand);
+}

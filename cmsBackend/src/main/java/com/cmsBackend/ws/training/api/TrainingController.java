@@ -8,6 +8,7 @@ import com.cmsBackend.ws.training.api.model.CreateCourseRequest;
 import com.cmsBackend.ws.training.api.model.UpdateCourseRequest;
 import com.cmsBackend.ws.training.api.model.UpdateClassRequest;
 import com.cmsBackend.ws.training.api.model.UpdateClassEnrollmentRequest;
+import com.cmsBackend.ws.training.api.model.ReceiveEnrollmentPaymentRequest;
 import com.cmsBackend.ws.training.api.model.ClassDetailResponse;
 import com.cmsBackend.ws.training.api.model.PageResponse;
 import com.cmsBackend.ws.training.application.CourseClassService;
@@ -103,6 +104,14 @@ public class TrainingController {
             @PathVariable UUID classId, @PathVariable UUID enrollmentId,
             @Valid @RequestBody UpdateClassEnrollmentRequest request, @AuthenticationPrincipal Jwt jwt) {
         return classService.updateEnrollment(classId, enrollmentId, request, UUID.fromString(jwt.getSubject()));
+    }
+
+    @PostMapping("/api/classes/{classId}/enrollments/{enrollmentId}/payments/{paymentId}/receive")
+    public ClassDetailResponse.EnrolledStudentResponse receiveEnrollmentPayment(
+            @PathVariable UUID classId, @PathVariable UUID enrollmentId, @PathVariable UUID paymentId,
+            @Valid @RequestBody ReceiveEnrollmentPaymentRequest request, @AuthenticationPrincipal Jwt jwt) {
+        return classService.receivePayment(classId, enrollmentId, paymentId, request,
+                UUID.fromString(jwt.getSubject()));
     }
 
     @DeleteMapping("/api/classes/{classId}/enrollments/{enrollmentId}")

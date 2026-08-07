@@ -6,7 +6,7 @@
 .courses .ant-tabs-nav { margin-bottom: 16px; }
 .courses .ant-tabs-tab b { min-width: 22px; padding: 2px 6px; border-radius: 8px; background: var(--app-neutral-100); color: var(--app-neutral-600); font-size: 11px; text-align: center; }
 .courses__toolbar { display: grid; grid-template-columns: minmax(260px, 440px) 200px; gap: 12px; margin-bottom: 16px; }
-.courses .ant-table-wrapper { overflow: hidden; border: 1px solid var(--app-neutral-200); border-radius: 8px; }
+.courses__records-table { overflow: hidden; border: 1px solid var(--app-neutral-200); border-radius: 8px; }
 .courses__primary-cell { display: flex; flex-direction: column; gap: 4px; }
 .courses__primary-cell strong { color: var(--app-neutral-900); }
 .courses__primary-cell small { color: var(--app-neutral-500); }
@@ -23,12 +23,19 @@
 .courses__date-picker { width: 100%; }
 .courses__loading { padding: 48px 16px; color: var(--app-neutral-500); text-align: center; }
 .courses__pagination { display: flex; justify-content: flex-end; margin-top: 16px; }
-.courses__clickable-row { cursor: pointer; }
-.courses__clickable-row:focus-visible { outline: 3px solid var(--app-brand); outline-offset: -3px; }
+.courses__mobile-class { display: grid; gap: 10px; }
+.courses__expanded-state { display: flex; align-items: center; gap: 10px; min-height: 96px; padding: 20px; color: var(--app-neutral-600); }
+.courses__records-table .ant-table-expanded-row > td { padding: 16px !important; background: var(--app-neutral-50); }
+.courses__expanded-table-scroll { width: 100%; overflow-x: auto; overflow-y: visible; border: 1px solid var(--app-neutral-200); border-radius: 6px; background: var(--app-surface); }
+.courses__expanded-students.ant-table-wrapper { min-width: 760px; overflow: visible; }
 .courses__detail { display: grid; gap: 24px; min-width: 0; }
 .courses__detail .ant-table-wrapper { min-width: 0; max-width: 100%; overflow: hidden; border: 1px solid var(--app-neutral-200); border-radius: 8px; }
 .courses__detail h4.ant-typography { margin: 0 0 4px; }
 .courses__detail h5.ant-typography { margin: 0 0 4px; }
+.courses__payment-schedule { display: grid; gap: 8px; padding: 8px 16px 16px; }
+.courses__payment-details { display: grid; gap: 24px; padding-top: 8px; }
+.courses__payment-details h5.ant-typography { margin: 0 0 8px; }
+.courses__payment-details .ant-table-wrapper { overflow: hidden; border: 1px solid var(--app-neutral-200); border-radius: 8px; }
 .courses__enrollment-form { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, .85fr); gap: 32px; max-height: min(68vh, 720px); overflow-y: auto; padding-right: 4px; }
 .courses__student-picker, .courses__payment-form { display: grid; align-content: start; gap: 16px; min-width: 0; }
 .courses__payment-form { padding-left: 32px; border-left: 1px solid var(--app-neutral-200); }
@@ -54,8 +61,7 @@
 .courses__candidate-status--active .anticon { color: var(--app-success); }
 .courses__candidate-status--prospective .anticon { color: var(--app-warning); }
 .courses__candidate-loading { display: flex; align-items: center; gap: 8px; padding: 24px 0; color: var(--app-neutral-600); }
-.courses__card-main { width: 100%; padding: 0; border: 0; color: inherit; background: transparent; text-align: left; cursor: pointer; }
-.courses__card-main:focus-visible { outline: 3px solid var(--app-brand); outline-offset: 4px; }
+.courses__card-main { width: 100%; color: inherit; text-align: left; }
 
 @media (max-width: 991px) {
   .courses__enrollment-form { grid-template-columns: 1fr; gap: 24px; max-height: 70vh; }

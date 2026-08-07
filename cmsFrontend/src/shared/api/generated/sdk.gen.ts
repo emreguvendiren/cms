@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateClassData, CreateClassEnrollmentData, CreateClassEnrollmentErrors, CreateClassEnrollmentResponses, CreateClassErrors, CreateClassResponses, CreateCourseData, CreateCourseErrors, CreateCourseResponses, CreateStudentData, CreateStudentErrors, CreateStudentResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteClassData, DeleteClassEnrollmentData, DeleteClassEnrollmentErrors, DeleteClassEnrollmentResponses, DeleteClassErrors, DeleteClassResponses, DeleteCourseData, DeleteCourseErrors, DeleteCourseResponses, DeleteStudentData, DeleteStudentErrors, DeleteStudentResponses, GetAuthorizationCatalogData, GetAuthorizationCatalogErrors, GetAuthorizationCatalogResponses, GetClassDetailData, GetClassDetailErrors, GetClassDetailResponses, GetCsrfTokenData, GetCsrfTokenResponses, GetStudentData, GetStudentErrors, GetStudentResponses, ListClassesData, ListClassesErrors, ListClassesResponses, ListCoursesData, ListCoursesErrors, ListCoursesResponses, ListManagedUsersData, ListManagedUsersErrors, ListManagedUsersResponses, ListStudentsData, ListStudentsErrors, ListStudentsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, ReplaceUserAuthoritiesData, ReplaceUserAuthoritiesErrors, ReplaceUserAuthoritiesResponses, RevealStudentPhoneData, RevealStudentPhoneErrors, RevealStudentPhoneResponses, UpdateClassData, UpdateClassEnrollmentData, UpdateClassEnrollmentErrors, UpdateClassEnrollmentResponses, UpdateClassErrors, UpdateClassResponses, UpdateCourseData, UpdateCourseErrors, UpdateCourseResponses, UpdateStudentData, UpdateStudentErrors, UpdateStudentResponses } from './types.gen';
+import type { CreateClassData, CreateClassEnrollmentData, CreateClassEnrollmentErrors, CreateClassEnrollmentResponses, CreateClassErrors, CreateClassResponses, CreateCourseData, CreateCourseErrors, CreateCourseResponses, CreateStudentData, CreateStudentErrors, CreateStudentResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteClassData, DeleteClassEnrollmentData, DeleteClassEnrollmentErrors, DeleteClassEnrollmentResponses, DeleteClassErrors, DeleteClassResponses, DeleteCourseData, DeleteCourseErrors, DeleteCourseResponses, DeleteStudentData, DeleteStudentErrors, DeleteStudentResponses, GetAuthorizationCatalogData, GetAuthorizationCatalogErrors, GetAuthorizationCatalogResponses, GetClassDetailData, GetClassDetailErrors, GetClassDetailResponses, GetCsrfTokenData, GetCsrfTokenResponses, GetStudentData, GetStudentErrors, GetStudentResponses, ListClassesData, ListClassesErrors, ListClassesResponses, ListCoursesData, ListCoursesErrors, ListCoursesResponses, ListManagedUsersData, ListManagedUsersErrors, ListManagedUsersResponses, ListStudentsData, ListStudentsErrors, ListStudentsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, ReceiveEnrollmentPaymentData, ReceiveEnrollmentPaymentErrors, ReceiveEnrollmentPaymentResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, ReplaceUserAuthoritiesData, ReplaceUserAuthoritiesErrors, ReplaceUserAuthoritiesResponses, RevealStudentPhoneData, RevealStudentPhoneErrors, RevealStudentPhoneResponses, UpdateClassData, UpdateClassEnrollmentData, UpdateClassEnrollmentErrors, UpdateClassEnrollmentResponses, UpdateClassErrors, UpdateClassResponses, UpdateCourseData, UpdateCourseErrors, UpdateCourseResponses, UpdateStudentData, UpdateStudentErrors, UpdateStudentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -129,6 +129,16 @@ export const deleteClassEnrollment = <ThrowOnError extends boolean = false>(opti
 export const updateClassEnrollment = <ThrowOnError extends boolean = false>(options: Options<UpdateClassEnrollmentData, ThrowOnError>): RequestResult<UpdateClassEnrollmentResponses, UpdateClassEnrollmentErrors, ThrowOnError> => (options.client ?? client).put<UpdateClassEnrollmentResponses, UpdateClassEnrollmentErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/classes/{classId}/enrollments/{enrollmentId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const receiveEnrollmentPayment = <ThrowOnError extends boolean = false>(options: Options<ReceiveEnrollmentPaymentData, ThrowOnError>): RequestResult<ReceiveEnrollmentPaymentResponses, ReceiveEnrollmentPaymentErrors, ThrowOnError> => (options.client ?? client).post<ReceiveEnrollmentPaymentResponses, ReceiveEnrollmentPaymentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/classes/{classId}/enrollments/{enrollmentId}/payments/{paymentId}/receive',
     ...options,
     headers: {
         'Content-Type': 'application/json',
