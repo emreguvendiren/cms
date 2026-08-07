@@ -45,4 +45,14 @@ public class SecurityAuditService {
         AUDIT.info("event=student_{} outcome=success actorId={} studentId={}", action, actorId, studentId);
     }
 
+    public void classEnrollmentCreated(UUID actorId, UUID classId, UUID studentId) {
+        AUDIT.info("event=class_enrollment_create outcome=success actorId={} classId={} studentId={}",
+                actorId, classId, studentId);
+    }
+
+    public void classEnrollmentChanged(String action, UUID actorId, UUID classId, UUID studentId) {
+        AUDIT.info("event=class_enrollment_{} outcome=success actorId={} classId={} studentId={}",
+                action, actorId, classId, studentId);
+    }
+
 }

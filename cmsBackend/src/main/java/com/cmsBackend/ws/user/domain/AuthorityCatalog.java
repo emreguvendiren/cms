@@ -14,6 +14,9 @@ public final class AuthorityCatalog {
     public static final String CLASS_CREATE = "class:create";
     public static final String CLASS_UPDATE = "class:update";
     public static final String CLASS_DELETE = "class:delete";
+    public static final String CLASS_ENROLLMENT_CREATE = "class:enrollment:create";
+    public static final String CLASS_ENROLLMENT_UPDATE = "class:enrollment:update";
+    public static final String CLASS_ENROLLMENT_DELETE = "class:enrollment:delete";
     public static final String USER_PERMISSION_MANAGE = "user:permission:manage";
     public static final String STUDENT_READ = "student:read";
     public static final String STUDENT_CREATE = "student:create";
@@ -23,13 +26,15 @@ public final class AuthorityCatalog {
 
     public static final List<String> ALL = List.of(
             PROFILE_READ, COURSE_READ, COURSE_CREATE, COURSE_UPDATE, COURSE_DELETE,
-            CLASS_READ, CLASS_CREATE, CLASS_UPDATE, CLASS_DELETE, USER_PERMISSION_MANAGE,
+            CLASS_READ, CLASS_CREATE, CLASS_UPDATE, CLASS_DELETE, CLASS_ENROLLMENT_CREATE,
+            CLASS_ENROLLMENT_UPDATE, CLASS_ENROLLMENT_DELETE, USER_PERMISSION_MANAGE,
             STUDENT_READ, STUDENT_CREATE, STUDENT_UPDATE, STUDENT_DELETE, STUDENT_PHONE_REVEAL);
 
     public static final Map<String, Set<String>> ROLE_PRESETS = Map.of(
             "ADMIN", Set.copyOf(ALL),
             "TRAINING_MANAGER", Set.of(PROFILE_READ, COURSE_READ, COURSE_CREATE, COURSE_UPDATE, COURSE_DELETE,
-                    CLASS_READ, CLASS_CREATE, CLASS_UPDATE, CLASS_DELETE,
+                    CLASS_READ, CLASS_CREATE, CLASS_UPDATE, CLASS_DELETE, CLASS_ENROLLMENT_CREATE,
+                    CLASS_ENROLLMENT_UPDATE, CLASS_ENROLLMENT_DELETE,
                     STUDENT_READ, STUDENT_CREATE, STUDENT_UPDATE, STUDENT_PHONE_REVEAL),
             "VIEWER", Set.of(PROFILE_READ, COURSE_READ, CLASS_READ, STUDENT_READ));
 

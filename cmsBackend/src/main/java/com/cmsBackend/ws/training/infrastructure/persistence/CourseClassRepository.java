@@ -7,7 +7,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.repository.query.Param;
+import jakarta.persistence.LockModeType;
 
 public interface CourseClassRepository extends JpaRepository<CourseClassJpaEntity, UUID> {
     @EntityGraph(attributePaths = "course")
@@ -31,4 +33,9 @@ public interface CourseClassRepository extends JpaRepository<CourseClassJpaEntit
     @Override
     @EntityGraph(attributePaths = "course")
     java.util.Optional<CourseClassJpaEntity> findById(UUID id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @EntityGraph(attributePaths = "course")
+    @Query("select cc from CourseClassJpaEntity cc where cc.id = :id")
+    java.util.Optional<CourseClassJpaEntity> findForEnrollmentById(@Param("id") UUID id);
 }

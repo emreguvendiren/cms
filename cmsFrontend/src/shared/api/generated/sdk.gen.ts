@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateClassData, CreateClassErrors, CreateClassResponses, CreateCourseData, CreateCourseErrors, CreateCourseResponses, CreateStudentData, CreateStudentErrors, CreateStudentResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteClassData, DeleteClassErrors, DeleteClassResponses, DeleteCourseData, DeleteCourseErrors, DeleteCourseResponses, DeleteStudentData, DeleteStudentErrors, DeleteStudentResponses, GetAuthorizationCatalogData, GetAuthorizationCatalogErrors, GetAuthorizationCatalogResponses, GetClassDetailData, GetClassDetailErrors, GetClassDetailResponses, GetCsrfTokenData, GetCsrfTokenResponses, GetStudentData, GetStudentErrors, GetStudentResponses, ListClassesData, ListClassesErrors, ListClassesResponses, ListCoursesData, ListCoursesErrors, ListCoursesResponses, ListManagedUsersData, ListManagedUsersErrors, ListManagedUsersResponses, ListStudentsData, ListStudentsErrors, ListStudentsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, ReplaceUserAuthoritiesData, ReplaceUserAuthoritiesErrors, ReplaceUserAuthoritiesResponses, RevealStudentPhoneData, RevealStudentPhoneErrors, RevealStudentPhoneResponses, UpdateClassData, UpdateClassErrors, UpdateClassResponses, UpdateCourseData, UpdateCourseErrors, UpdateCourseResponses, UpdateStudentData, UpdateStudentErrors, UpdateStudentResponses } from './types.gen';
+import type { CreateClassData, CreateClassEnrollmentData, CreateClassEnrollmentErrors, CreateClassEnrollmentResponses, CreateClassErrors, CreateClassResponses, CreateCourseData, CreateCourseErrors, CreateCourseResponses, CreateStudentData, CreateStudentErrors, CreateStudentResponses, CurrentUserData, CurrentUserErrors, CurrentUserResponses, DeleteClassData, DeleteClassEnrollmentData, DeleteClassEnrollmentErrors, DeleteClassEnrollmentResponses, DeleteClassErrors, DeleteClassResponses, DeleteCourseData, DeleteCourseErrors, DeleteCourseResponses, DeleteStudentData, DeleteStudentErrors, DeleteStudentResponses, GetAuthorizationCatalogData, GetAuthorizationCatalogErrors, GetAuthorizationCatalogResponses, GetClassDetailData, GetClassDetailErrors, GetClassDetailResponses, GetCsrfTokenData, GetCsrfTokenResponses, GetStudentData, GetStudentErrors, GetStudentResponses, ListClassesData, ListClassesErrors, ListClassesResponses, ListCoursesData, ListCoursesErrors, ListCoursesResponses, ListManagedUsersData, ListManagedUsersErrors, ListManagedUsersResponses, ListStudentsData, ListStudentsErrors, ListStudentsResponses, LoginData, LoginErrors, LoginResponses, LogoutData, LogoutErrors, LogoutResponses, RefreshAccessTokenData, RefreshAccessTokenErrors, RefreshAccessTokenResponses, ReplaceUserAuthoritiesData, ReplaceUserAuthoritiesErrors, ReplaceUserAuthoritiesResponses, RevealStudentPhoneData, RevealStudentPhoneErrors, RevealStudentPhoneResponses, UpdateClassData, UpdateClassEnrollmentData, UpdateClassEnrollmentErrors, UpdateClassEnrollmentResponses, UpdateClassErrors, UpdateClassResponses, UpdateCourseData, UpdateCourseErrors, UpdateCourseResponses, UpdateStudentData, UpdateStudentErrors, UpdateStudentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -103,6 +103,32 @@ export const getClassDetail = <ThrowOnError extends boolean = false>(options: Op
 export const updateClass = <ThrowOnError extends boolean = false>(options: Options<UpdateClassData, ThrowOnError>): RequestResult<UpdateClassResponses, UpdateClassErrors, ThrowOnError> => (options.client ?? client).put<UpdateClassResponses, UpdateClassErrors, ThrowOnError>({
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/api/classes/{classId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const createClassEnrollment = <ThrowOnError extends boolean = false>(options: Options<CreateClassEnrollmentData, ThrowOnError>): RequestResult<CreateClassEnrollmentResponses, CreateClassEnrollmentErrors, ThrowOnError> => (options.client ?? client).post<CreateClassEnrollmentResponses, CreateClassEnrollmentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/classes/{classId}/enrollments',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+export const deleteClassEnrollment = <ThrowOnError extends boolean = false>(options: Options<DeleteClassEnrollmentData, ThrowOnError>): RequestResult<DeleteClassEnrollmentResponses, DeleteClassEnrollmentErrors, ThrowOnError> => (options.client ?? client).delete<DeleteClassEnrollmentResponses, DeleteClassEnrollmentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/classes/{classId}/enrollments/{enrollmentId}',
+    ...options
+});
+
+export const updateClassEnrollment = <ThrowOnError extends boolean = false>(options: Options<UpdateClassEnrollmentData, ThrowOnError>): RequestResult<UpdateClassEnrollmentResponses, UpdateClassEnrollmentErrors, ThrowOnError> => (options.client ?? client).put<UpdateClassEnrollmentResponses, UpdateClassEnrollmentErrors, ThrowOnError>({
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/api/classes/{classId}/enrollments/{enrollmentId}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

@@ -2,15 +2,24 @@ package com.cmsBackend.ws.training.application;
 
 import com.cmsBackend.ws.training.api.model.ClassResponse;
 import com.cmsBackend.ws.training.api.model.CreateClassRequest;
+import com.cmsBackend.ws.training.api.model.CreateClassEnrollmentRequest;
 import com.cmsBackend.ws.training.api.model.UpdateClassRequest;
+import com.cmsBackend.ws.training.api.model.UpdateClassEnrollmentRequest;
 import com.cmsBackend.ws.training.api.model.ClassDetailResponse;
 import com.cmsBackend.ws.training.api.model.PageResponse;
 import com.cmsBackend.ws.training.domain.ClassStatus;
 import com.cmsBackend.ws.training.domain.CourseStatus;
+import com.cmsBackend.ws.training.domain.EnrollmentStatus;
+import com.cmsBackend.ws.training.domain.PaymentPlanType;
+import com.cmsBackend.ws.training.domain.PaymentStatus;
+import com.cmsBackend.ws.student.domain.StudentStatus;
+import com.cmsBackend.ws.common.security.audit.SecurityAuditService;
+import com.cmsBackend.ws.training.infrastructure.persistence.ClassEnrollmentJpaEntity;
 import com.cmsBackend.ws.training.infrastructure.persistence.CourseClassJpaEntity;
 import com.cmsBackend.ws.training.infrastructure.persistence.CourseClassRepository;
 import com.cmsBackend.ws.training.infrastructure.persistence.CourseRepository;
 import com.cmsBackend.ws.training.infrastructure.persistence.ClassEnrollmentRepository;
+import com.cmsBackend.ws.training.infrastructure.persistence.StudentRepository;
 import java.util.UUID;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -23,11 +32,16 @@ public class CourseClassService {
     private final CourseClassRepository classes;
     private final CourseRepository courses;
     private final ClassEnrollmentRepository enrollments;
+    private final StudentRepository students;
+    private final SecurityAuditService audit;
 
-    public CourseClassService(CourseClassRepository classes, CourseRepository courses, ClassEnrollmentRepository enrollments) {
+    public CourseClassService(CourseClassRepository classes, CourseRepository courses,
+            ClassEnrollmentRepository enrollments, StudentRepository students, SecurityAuditService audit) {
         this.classes = classes;
         this.courses = courses;
         this.enrollments = enrollments;
+        this.students = students;
+        this.audit = audit;
     }
 
     @PreAuthorize("hasAuthority('class:read')")
@@ -61,6 +75,67 @@ public class CourseClassService {
         return new ClassDetailResponse(ClassResponse.from(courseClass), students);
     }
 
+    @PreAuthorize("hasAuthority('class:enrollment:create')")
+    @Transactional
+    public ClassDetailResponse.EnrolledStudentResponse enroll(
+            UUID classId, CreateClassEnrollmentRequest request, UUID actorId) {
+        validatePaymentPlan(request);
+        var courseClass = classes.findForEnrollmentById(classId).orElseThrow(TrainingNotFoundException::new);
+        var student = students.findByIdAndDeletedAtIsNull(request.studentId())
+                .orElseThrow(TrainingNotFoundException::new);
+        if (student.getStatus() == StudentStatus.INACTIVE) throw new TrainingConflictException();
+        if (enrollments.existsByCourseClassIdAndStudentId(classId, student.getId())) {
+            throw new TrainingConflictException();
+        }
+        long activeEnrollmentCount = enrollments.countByCourseClassIdAndStatusNot(classId, EnrollmentStatus.CANCELLED);
+        if (activeEnrollmentCount >= courseClass.getCapacity()) throw new TrainingConflictException();
+
+        student.activateForEnrollment(courseClass.getCourse().getName());
+        var enrollment = new ClassEnrollmentJpaEntity(
+                UUID.randomUUID(), courseClass, student, EnrollmentStatus.ACTIVE,
+                request.registrationFee(), request.paymentPlan(),
+                request.paymentPlan() == PaymentPlanType.INSTALLMENT ? request.installmentCount() : null,
+                request.paymentPlan() == PaymentPlanType.INSTALLMENT ? request.firstPaymentDate() : null,
+                request.paymentStatus(),
+                request.paymentPlan() == PaymentPlanType.CASH && request.paymentStatus() == PaymentStatus.PENDING
+                        ? request.expectedPaymentDate() : null,
+                normalizeNote(request.note()));
+        var saved = enrollments.saveAndFlush(enrollment);
+        audit.classEnrollmentCreated(actorId, classId, student.getId());
+        return ClassDetailResponse.EnrolledStudentResponse.from(saved);
+    }
+
+    @PreAuthorize("hasAuthority('class:enrollment:update')")
+    @Transactional
+    public ClassDetailResponse.EnrolledStudentResponse updateEnrollment(
+            UUID classId, UUID enrollmentId, UpdateClassEnrollmentRequest request, UUID actorId) {
+        validatePaymentPlan(request);
+        var enrollment = enrollments.findByIdAndCourseClassId(enrollmentId, classId)
+                .orElseThrow(TrainingNotFoundException::new);
+        if (enrollment.getVersion() != request.version()) throw new TrainingConflictException();
+        enrollment.updatePayment(request.registrationFee(), request.paymentPlan(),
+                request.paymentPlan() == PaymentPlanType.INSTALLMENT ? request.installmentCount() : null,
+                request.paymentPlan() == PaymentPlanType.INSTALLMENT ? request.firstPaymentDate() : null,
+                request.paymentStatus(),
+                request.paymentPlan() == PaymentPlanType.CASH && request.paymentStatus() == PaymentStatus.PENDING
+                        ? request.expectedPaymentDate() : null,
+                normalizeNote(request.note()));
+        var saved = enrollments.saveAndFlush(enrollment);
+        audit.classEnrollmentChanged("update", actorId, classId, enrollment.getStudent().getId());
+        return ClassDetailResponse.EnrolledStudentResponse.from(saved);
+    }
+
+    @PreAuthorize("hasAuthority('class:enrollment:delete')")
+    @Transactional
+    public void deleteEnrollment(UUID classId, UUID enrollmentId, UUID actorId) {
+        var enrollment = enrollments.findByIdAndCourseClassId(enrollmentId, classId)
+                .orElseThrow(TrainingNotFoundException::new);
+        var studentId = enrollment.getStudent().getId();
+        enrollments.delete(enrollment);
+        enrollments.flush();
+        audit.classEnrollmentChanged("delete", actorId, classId, studentId);
+    }
+
     @PreAuthorize("hasAuthority('class:update')")
     @Transactional
     public ClassResponse update(UUID id, UpdateClassRequest request) {
@@ -84,5 +159,47 @@ public class CourseClassService {
 
     private String normalizeSearch(String search) {
         return search == null ? "" : search.trim();
+    }
+
+    private void validatePaymentPlan(CreateClassEnrollmentRequest request) {
+        if (request.paymentPlan() == PaymentPlanType.INSTALLMENT
+                && (request.installmentCount() == null || request.firstPaymentDate() == null)) {
+            throw new IllegalArgumentException("Installment count and first payment date are required.");
+        }
+        if (request.paymentPlan() == PaymentPlanType.CASH
+                && (request.installmentCount() != null || request.firstPaymentDate() != null)) {
+            throw new IllegalArgumentException("Cash payment cannot contain installment details.");
+        }
+        boolean pendingCash = request.paymentPlan() == PaymentPlanType.CASH
+                && request.paymentStatus() == PaymentStatus.PENDING;
+        if (pendingCash && request.expectedPaymentDate() == null) {
+            throw new IllegalArgumentException("Expected payment date is required for pending cash payments.");
+        }
+        if (!pendingCash && request.expectedPaymentDate() != null) {
+            throw new IllegalArgumentException("Expected payment date is only valid for pending cash payments.");
+        }
+    }
+
+    private void validatePaymentPlan(UpdateClassEnrollmentRequest request) {
+        if (request.paymentPlan() == PaymentPlanType.INSTALLMENT
+                && (request.installmentCount() == null || request.firstPaymentDate() == null)) {
+            throw new IllegalArgumentException("Installment count and first payment date are required.");
+        }
+        if (request.paymentPlan() == PaymentPlanType.CASH
+                && (request.installmentCount() != null || request.firstPaymentDate() != null)) {
+            throw new IllegalArgumentException("Cash payment cannot contain installment details.");
+        }
+        boolean pendingCash = request.paymentPlan() == PaymentPlanType.CASH
+                && request.paymentStatus() == PaymentStatus.PENDING;
+        if (pendingCash && request.expectedPaymentDate() == null) {
+            throw new IllegalArgumentException("Expected payment date is required for pending cash payments.");
+        }
+        if (!pendingCash && request.expectedPaymentDate() != null) {
+            throw new IllegalArgumentException("Expected payment date is only valid for pending cash payments.");
+        }
+    }
+
+    private String normalizeNote(String note) {
+        return note == null || note.isBlank() ? null : note.trim();
     }
 }

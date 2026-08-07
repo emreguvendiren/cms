@@ -63,6 +63,12 @@ public class StudentJpaEntity {
     }
 
     public void softDelete(UUID actorId, Instant now) { this.deletedBy = actorId; this.deletedAt = now; }
+    public void activateForEnrollment(String courseName) {
+        this.status = StudentStatus.ACTIVE;
+        this.activeCourse = courseName;
+        this.inactiveReason = null;
+        this.expectedStartDate = null;
+    }
     public UUID getId(){return id;} public String getFullName(){return fullName;} public String getEmail(){return email;}
     public String getPhoneCiphertext(){return phoneCiphertext;} public String getPhoneIv(){return phoneIv;}
     public String getPhoneLookupHash(){return phoneLookupHash;} public Integer getPhoneKeyVersion(){return phoneKeyVersion;}

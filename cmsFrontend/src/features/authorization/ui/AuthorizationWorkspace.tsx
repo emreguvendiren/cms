@@ -1,15 +1,16 @@
 import type { JSX } from "react";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, App, Button, Checkbox, Empty, Flex, Input, Select, Spin, Table, Tag, Typography } from "antd";
+import { App, Button, Checkbox, Empty, Flex, Input, Select, Spin, Table, Tag, Typography } from "antd";
 import SearchOutlined from "@ant-design/icons/SearchOutlined";
 import type { AuthenticatedUser } from "../../auth";
+import { StatusLine } from "../../../shared/ui/StatusLine";
 import { loadAuthorizationCatalog, loadManagedUsers, saveUserAuthorities, type AuthorizationCatalog, type ManagedUser } from "../api/authorizationApi";
 import "./authorizationWorkspace.css";
 
 const labels: Record<string, string> = {
   "profile:read": "Profil görüntüleme", "course:read": "Kursları görüntüleme", "course:create": "Kurs oluşturma",
   "course:update": "Kurs düzenleme", "course:delete": "Kurs silme",
-  "class:read": "Sınıfları görüntüleme", "class:create": "Sınıf oluşturma", "class:update": "Sınıf düzenleme", "class:delete": "Sınıf silme", "user:permission:manage": "Rol ve yetki yönetimi",
+  "class:read": "Sınıfları görüntüleme", "class:create": "Sınıf oluşturma", "class:update": "Sınıf düzenleme", "class:delete": "Sınıf silme", "class:enrollment:create": "Sınıfa öğrenci kaydetme", "class:enrollment:update": "Sınıf kaydını düzenleme", "class:enrollment:delete": "Sınıf kaydını silme", "user:permission:manage": "Rol ve yetki yönetimi",
 };
 const roleLabels: Record<string, string> = { ADMIN: "Yönetici", TRAINING_MANAGER: "Eğitim yöneticisi", VIEWER: "Görüntüleyici", CUSTOM: "Özel yetkiler" };
 
@@ -52,7 +53,7 @@ export function AuthorizationWorkspace({ currentUser }: { currentUser: Authentic
       <div><Typography.Title level={2}>Rol ve yetki yönetimi</Typography.Title><Typography.Text type="secondary">Kullanıcıların eğitim operasyonlarına erişimini yönetin.</Typography.Text></div>
     </Flex>
     <Input aria-label="Kullanıcı ara" prefix={<SearchOutlined />} placeholder="E-posta ile ara" value={search} onChange={(event) => { setSearch(event.target.value); setPage(0); }} allowClear />
-    {error && <Alert type="error" showIcon message="Kullanıcılar yüklenemedi" action={<Button onClick={() => void reload()}>Tekrar dene</Button>} />}
+    {error && <StatusLine tone="error" title="Kullanıcılar yüklenemedi" description="Bağlantıyı kontrol edip yeniden deneyin." action={<Button onClick={() => void reload()}>Tekrar dene</Button>} />}
     <Spin spinning={loading}>
       <Table className="authorization__table" rowKey="id" dataSource={users} pagination={{ current: page + 1, pageSize: 10, total, showSizeChanger: false, onChange: (value) => setPage(value - 1) }}
         locale={{ emptyText: <Empty description={search ? "Aramayla eşleşen kullanıcı yok." : "Henüz kullanıcı yok."} /> }}

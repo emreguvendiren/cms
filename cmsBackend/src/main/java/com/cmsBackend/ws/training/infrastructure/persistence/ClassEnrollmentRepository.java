@@ -5,4 +5,7 @@ public interface ClassEnrollmentRepository extends JpaRepository<ClassEnrollment
     @EntityGraph(attributePaths="student")
     List<ClassEnrollmentJpaEntity> findByCourseClassIdOrderByStudentFullNameAsc(UUID classId);
     boolean existsByCourseClassId(UUID classId);
+    boolean existsByCourseClassIdAndStudentId(UUID classId, UUID studentId);
+    Optional<ClassEnrollmentJpaEntity> findByIdAndCourseClassId(UUID id, UUID classId);
+    long countByCourseClassIdAndStatusNot(UUID classId, com.cmsBackend.ws.training.domain.EnrollmentStatus status);
 }

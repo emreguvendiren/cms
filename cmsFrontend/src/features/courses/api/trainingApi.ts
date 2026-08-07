@@ -3,6 +3,9 @@ import { environment } from "../../../shared/config/environment";
 import {
   createClass as createClassRequest,
   createCourse as createCourseRequest,
+  createClassEnrollment as createClassEnrollmentRequest,
+  updateClassEnrollment as updateClassEnrollmentRequest,
+  deleteClassEnrollment as deleteClassEnrollmentRequest,
   updateCourse as updateCourseRequest,
   deleteCourse as deleteCourseRequest,
   updateClass as updateClassRequest,
@@ -10,6 +13,7 @@ import {
   getClassDetail as getClassDetailRequest,
   listClasses as listClassesRequest,
   listCourses as listCoursesRequest,
+  listStudents as listStudentsRequest,
   type ClassPage,
   type ClassStatus,
   type CoursePage,
@@ -19,6 +23,11 @@ import {
   type UpdateCourseRequest,
   type UpdateClassRequest,
   type ClassDetail,
+  type CreateClassEnrollmentRequest,
+  type UpdateClassEnrollmentRequest,
+  type EnrolledStudent,
+  type Student,
+  type StudentStatus,
 } from "../../../shared/api/generated";
 
 type ListCoursesParameters = {
@@ -78,6 +87,28 @@ export async function loadClassDetail(id: string): Promise<ClassDetail> {
   return (await getClassDetailRequest({ ...clientOptions(), path: { classId: id } })).data;
 }
 
+export async function loadEnrollmentCandidates(search: string, status?: StudentStatus): Promise<Student[]> {
+  if (status) {
+    return (await listStudentsRequest({ ...clientOptions(), query: { search, status, page: 0, size: 50 } })).data.content;
+  }
+  const [active, prospective] = await Promise.all([
+    listStudentsRequest({ ...clientOptions(), query: { search, status: "ACTIVE", page: 0, size: 50 } }),
+    listStudentsRequest({ ...clientOptions(), query: { search, status: "PROSPECTIVE", page: 0, size: 50 } }),
+  ]);
+  return [...active.data.content, ...prospective.data.content]
+    .sort((left, right) => left.fullName.localeCompare(right.fullName, "tr-TR"));
+}
+
+export async function enrollStudent(classId: string, request: CreateClassEnrollmentRequest): Promise<EnrolledStudent> {
+  return (await createClassEnrollmentRequest({ ...clientOptions(), path: { classId }, body: request })).data;
+}
+export async function updateEnrollment(classId: string, enrollmentId: string, request: UpdateClassEnrollmentRequest): Promise<EnrolledStudent> {
+  return (await updateClassEnrollmentRequest({ ...clientOptions(), path: { classId, enrollmentId }, body: request })).data;
+}
+export async function removeEnrollment(classId: string, enrollmentId: string): Promise<void> {
+  await deleteClassEnrollmentRequest({ ...clientOptions(), path: { classId, enrollmentId } });
+}
+
 export type {
   ClassPage,
   ClassStatus,
@@ -90,4 +121,11 @@ export type {
   UpdateCourseRequest,
   UpdateClassRequest,
   ClassDetail,
+  CreateClassEnrollmentRequest,
+  UpdateClassEnrollmentRequest,
+  EnrolledStudent,
+  PaymentPlanType,
+  PaymentStatus,
+  Student,
+  StudentStatus,
 } from "../../../shared/api/generated";

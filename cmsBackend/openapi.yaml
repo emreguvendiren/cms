@@ -209,6 +209,54 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
+  /api/classes/{classId}/enrollments:
+    post:
+      operationId: createClassEnrollment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: classId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/CreateClassEnrollmentRequest'}
+      responses:
+        '201':
+          description: Student enrolled in the class
+          content: {application/json: {schema: {$ref: '#/components/schemas/EnrolledStudent'}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/classes/{classId}/enrollments/{enrollmentId}:
+    put:
+      operationId: updateClassEnrollment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: classId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: enrollmentId, in: path, required: true, schema: {type: string, format: uuid}}
+      requestBody:
+        required: true
+        content: {application/json: {schema: {$ref: '#/components/schemas/UpdateClassEnrollmentRequest'}}}
+      responses:
+        '200': {description: Class enrollment updated, content: {application/json: {schema: {$ref: '#/components/schemas/EnrolledStudent'}}}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+    delete:
+      operationId: deleteClassEnrollment
+      security: [{bearerAuth: []}]
+      parameters:
+        - {name: classId, in: path, required: true, schema: {type: string, format: uuid}}
+        - {name: enrollmentId, in: path, required: true, schema: {type: string, format: uuid}}
+      responses:
+        '204': {description: Class enrollment deleted}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
   /api/students:
     get:
       operationId: listStudents
@@ -496,13 +544,64 @@ components:
         version: {type: integer, format: int64}
     EnrolledStudent:
       type: object
-      required: [id, fullName, email, enrollmentStatus]
+      required: [id, enrollmentId, fullName, email, enrollmentStatus, registrationFee, paymentPlan, paymentStatus, version]
       properties:
         id: {type: string, format: uuid}
+        enrollmentId: {type: string, format: uuid}
         fullName: {type: string}
         email: {type: string, format: email}
         phoneMasked: {type: string}
         enrollmentStatus: {type: string, enum: [ACTIVE, COMPLETED, CANCELLED]}
+        registrationFee: {type: number, minimum: 0, multipleOf: 0.01}
+        paymentPlan: {$ref: '#/components/schemas/PaymentPlanType'}
+        installmentCount: {type: [integer, 'null'], minimum: 2, maximum: 24}
+        firstPaymentDate: {type: [string, 'null'], format: date}
+        paymentStatus: {$ref: '#/components/schemas/PaymentStatus'}
+        expectedPaymentDate: {type: [string, 'null'], format: date}
+        note: {type: [string, 'null'], maxLength: 1000}
+        version: {type: integer, format: int64}
+    PaymentPlanType:
+      type: string
+      enum: [CASH, INSTALLMENT]
+    PaymentStatus:
+      type: string
+      enum: [PENDING, COMPLETED]
+    CreateClassEnrollmentRequest:
+      type: object
+      additionalProperties: false
+      required: [studentId, registrationFee, paymentPlan, paymentStatus]
+      properties:
+        studentId: {type: string, format: uuid}
+        registrationFee: {type: number, minimum: 0, maximum: 9999999999.99, multipleOf: 0.01}
+        paymentPlan: {$ref: '#/components/schemas/PaymentPlanType'}
+        installmentCount:
+          type: [integer, 'null']
+          minimum: 2
+          maximum: 24
+          description: Required only when paymentPlan is INSTALLMENT; must be absent for CASH.
+        firstPaymentDate:
+          type: [string, 'null']
+          format: date
+          description: Required only when paymentPlan is INSTALLMENT; must be absent for CASH.
+        paymentStatus: {$ref: '#/components/schemas/PaymentStatus'}
+        expectedPaymentDate:
+          type: [string, 'null']
+          format: date
+          description: Required only for pending cash payments; must be absent otherwise.
+        note: {type: [string, 'null'], maxLength: 1000}
+    UpdateClassEnrollmentRequest:
+      type: object
+      additionalProperties: false
+      required: [registrationFee, paymentPlan, paymentStatus, version]
+      properties:
+        registrationFee: {type: number, minimum: 0, maximum: 9999999999.99, multipleOf: 0.01}
+        paymentPlan: {$ref: '#/components/schemas/PaymentPlanType'}
+        installmentCount: {type: [integer, 'null'], minimum: 2, maximum: 24}
+        firstPaymentDate: {type: [string, 'null'], format: date}
+        paymentStatus: {$ref: '#/components/schemas/PaymentStatus'}
+        expectedPaymentDate: {type: [string, 'null'], format: date}
+        note: {type: [string, 'null'], maxLength: 1000}
+        version: {type: integer, format: int64, minimum: 0}
     ClassDetail:
       type: object
       required: [classInfo, students]

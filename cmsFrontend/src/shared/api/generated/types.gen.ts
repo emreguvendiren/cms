@@ -88,10 +88,54 @@ export type CourseClass = {
 
 export type EnrolledStudent = {
     id: string;
+    enrollmentId: string;
     fullName: string;
     email: string;
     phoneMasked?: string;
     enrollmentStatus: 'ACTIVE' | 'COMPLETED' | 'CANCELLED';
+    registrationFee: number;
+    paymentPlan: PaymentPlanType;
+    installmentCount?: number | null;
+    firstPaymentDate?: string | null;
+    paymentStatus: PaymentStatus;
+    expectedPaymentDate?: string | null;
+    note?: string | null;
+    version: number;
+};
+
+export type PaymentPlanType = 'CASH' | 'INSTALLMENT';
+
+export type PaymentStatus = 'PENDING' | 'COMPLETED';
+
+export type CreateClassEnrollmentRequest = {
+    studentId: string;
+    registrationFee: number;
+    paymentPlan: PaymentPlanType;
+    /**
+     * Required only when paymentPlan is INSTALLMENT; must be absent for CASH.
+     */
+    installmentCount?: number | null;
+    /**
+     * Required only when paymentPlan is INSTALLMENT; must be absent for CASH.
+     */
+    firstPaymentDate?: string | null;
+    paymentStatus: PaymentStatus;
+    /**
+     * Required only for pending cash payments; must be absent otherwise.
+     */
+    expectedPaymentDate?: string | null;
+    note?: string | null;
+};
+
+export type UpdateClassEnrollmentRequest = {
+    registrationFee: number;
+    paymentPlan: PaymentPlanType;
+    installmentCount?: number | null;
+    firstPaymentDate?: string | null;
+    paymentStatus: PaymentStatus;
+    expectedPaymentDate?: string | null;
+    note?: string | null;
+    version: number;
 };
 
 export type ClassDetail = {
@@ -665,6 +709,129 @@ export type UpdateClassResponses = {
 };
 
 export type UpdateClassResponse = UpdateClassResponses[keyof UpdateClassResponses];
+
+export type CreateClassEnrollmentData = {
+    body: CreateClassEnrollmentRequest;
+    path: {
+        classId: string;
+    };
+    query?: never;
+    url: '/api/classes/{classId}/enrollments';
+};
+
+export type CreateClassEnrollmentErrors = {
+    /**
+     * Invalid request
+     */
+    400: ApiError;
+    /**
+     * Authentication failed
+     */
+    401: ApiError;
+    /**
+     * Authenticated user lacks the required authority
+     */
+    403: ApiError;
+    /**
+     * Referenced resource was not found
+     */
+    404: ApiError;
+    /**
+     * Unique code or resource state conflict
+     */
+    409: ApiError;
+};
+
+export type CreateClassEnrollmentError = CreateClassEnrollmentErrors[keyof CreateClassEnrollmentErrors];
+
+export type CreateClassEnrollmentResponses = {
+    /**
+     * Student enrolled in the class
+     */
+    201: EnrolledStudent;
+};
+
+export type CreateClassEnrollmentResponse = CreateClassEnrollmentResponses[keyof CreateClassEnrollmentResponses];
+
+export type DeleteClassEnrollmentData = {
+    body?: never;
+    path: {
+        classId: string;
+        enrollmentId: string;
+    };
+    query?: never;
+    url: '/api/classes/{classId}/enrollments/{enrollmentId}';
+};
+
+export type DeleteClassEnrollmentErrors = {
+    /**
+     * Authentication failed
+     */
+    401: ApiError;
+    /**
+     * Authenticated user lacks the required authority
+     */
+    403: ApiError;
+    /**
+     * Referenced resource was not found
+     */
+    404: ApiError;
+};
+
+export type DeleteClassEnrollmentError = DeleteClassEnrollmentErrors[keyof DeleteClassEnrollmentErrors];
+
+export type DeleteClassEnrollmentResponses = {
+    /**
+     * Class enrollment deleted
+     */
+    204: void;
+};
+
+export type DeleteClassEnrollmentResponse = DeleteClassEnrollmentResponses[keyof DeleteClassEnrollmentResponses];
+
+export type UpdateClassEnrollmentData = {
+    body: UpdateClassEnrollmentRequest;
+    path: {
+        classId: string;
+        enrollmentId: string;
+    };
+    query?: never;
+    url: '/api/classes/{classId}/enrollments/{enrollmentId}';
+};
+
+export type UpdateClassEnrollmentErrors = {
+    /**
+     * Invalid request
+     */
+    400: ApiError;
+    /**
+     * Authentication failed
+     */
+    401: ApiError;
+    /**
+     * Authenticated user lacks the required authority
+     */
+    403: ApiError;
+    /**
+     * Referenced resource was not found
+     */
+    404: ApiError;
+    /**
+     * Unique code or resource state conflict
+     */
+    409: ApiError;
+};
+
+export type UpdateClassEnrollmentError = UpdateClassEnrollmentErrors[keyof UpdateClassEnrollmentErrors];
+
+export type UpdateClassEnrollmentResponses = {
+    /**
+     * Class enrollment updated
+     */
+    200: EnrolledStudent;
+};
+
+export type UpdateClassEnrollmentResponse = UpdateClassEnrollmentResponses[keyof UpdateClassEnrollmentResponses];
 
 export type ListStudentsData = {
     body?: never;

@@ -3,9 +3,11 @@ package com.cmsBackend.ws.training.api;
 import com.cmsBackend.ws.training.api.model.ClassResponse;
 import com.cmsBackend.ws.training.api.model.CourseResponse;
 import com.cmsBackend.ws.training.api.model.CreateClassRequest;
+import com.cmsBackend.ws.training.api.model.CreateClassEnrollmentRequest;
 import com.cmsBackend.ws.training.api.model.CreateCourseRequest;
 import com.cmsBackend.ws.training.api.model.UpdateCourseRequest;
 import com.cmsBackend.ws.training.api.model.UpdateClassRequest;
+import com.cmsBackend.ws.training.api.model.UpdateClassEnrollmentRequest;
 import com.cmsBackend.ws.training.api.model.ClassDetailResponse;
 import com.cmsBackend.ws.training.api.model.PageResponse;
 import com.cmsBackend.ws.training.application.CourseClassService;
@@ -19,6 +21,8 @@ import jakarta.validation.constraints.Size;
 import java.net.URI;
 import java.util.UUID;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -84,6 +88,29 @@ public class TrainingController {
 
     @GetMapping("/api/classes/{classId}")
     public ClassDetailResponse classDetail(@PathVariable UUID classId) { return classService.detail(classId); }
+
+    @PostMapping("/api/classes/{classId}/enrollments")
+    public ResponseEntity<ClassDetailResponse.EnrolledStudentResponse> createClassEnrollment(
+            @PathVariable UUID classId, @Valid @RequestBody CreateClassEnrollmentRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        var response = classService.enroll(classId, request, UUID.fromString(jwt.getSubject()));
+        return ResponseEntity.created(URI.create("/api/classes/" + classId + "/enrollments/" + response.id()))
+                .body(response);
+    }
+
+    @PutMapping("/api/classes/{classId}/enrollments/{enrollmentId}")
+    public ClassDetailResponse.EnrolledStudentResponse updateClassEnrollment(
+            @PathVariable UUID classId, @PathVariable UUID enrollmentId,
+            @Valid @RequestBody UpdateClassEnrollmentRequest request, @AuthenticationPrincipal Jwt jwt) {
+        return classService.updateEnrollment(classId, enrollmentId, request, UUID.fromString(jwt.getSubject()));
+    }
+
+    @DeleteMapping("/api/classes/{classId}/enrollments/{enrollmentId}")
+    public ResponseEntity<Void> deleteClassEnrollment(
+            @PathVariable UUID classId, @PathVariable UUID enrollmentId, @AuthenticationPrincipal Jwt jwt) {
+        classService.deleteEnrollment(classId, enrollmentId, UUID.fromString(jwt.getSubject()));
+        return ResponseEntity.noContent().build();
+    }
 
     @PutMapping("/api/classes/{classId}")
     public ClassResponse updateClass(@PathVariable UUID classId, @Valid @RequestBody UpdateClassRequest request) {
