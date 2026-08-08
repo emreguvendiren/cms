@@ -1,0 +1,6 @@
+[submodule "cmsFrontend"]
+	path = cmsFrontend
+	url = https://github.com/emreguvendiren/cms-frontend.git
+[submodule "cmsBackend"]
+	path = cmsBackend
+	url = https://github.com/emreguvendiren/cms-backend.git
