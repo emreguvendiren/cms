@@ -6,12 +6,14 @@ import BellOutlined from "@ant-design/icons/BellOutlined";
 import BookOutlined from "@ant-design/icons/BookOutlined";
 import CalendarOutlined from "@ant-design/icons/CalendarOutlined";
 import DownOutlined from "@ant-design/icons/DownOutlined";
+import MenuFoldOutlined from "@ant-design/icons/MenuFoldOutlined";
 import MenuOutlined from "@ant-design/icons/MenuOutlined";
+import MenuUnfoldOutlined from "@ant-design/icons/MenuUnfoldOutlined";
 import PieChartOutlined from "@ant-design/icons/PieChartOutlined";
 import SafetyCertificateOutlined from "@ant-design/icons/SafetyCertificateOutlined";
 import TeamOutlined from "@ant-design/icons/TeamOutlined";
 import UserOutlined from "@ant-design/icons/UserOutlined";
-import { Avatar, Badge, Button, Drawer, Dropdown, Flex, Grid, Layout, Menu, Typography } from "antd";
+import { Avatar, Badge, Button, Drawer, Dropdown, Flex, Grid, Layout, Menu, Tooltip, Typography } from "antd";
 
 import type { AuthenticatedUser } from "../../features/auth";
 import "./appShell.css";
@@ -36,10 +38,15 @@ type AppShellProps = PropsWithChildren<{
 export function AppShell({ children, user, onLogout, activePage, onNavigate }: AppShellProps): JSX.Element {
   const screens = Grid.useBreakpoint();
   const [navigationOpen, setNavigationOpen] = useState(false);
+  const [navigationCollapsed, setNavigationCollapsed] = useState(false);
   const desktop = screens.lg === true;
+  const compactNavigation = desktop && navigationCollapsed;
+  const navigationToggleLabel = desktop
+    ? navigationCollapsed ? "Navigasyonu genislet" : "Navigasyonu daralt"
+    : "Navigasyonu ac";
 
   const navigation = (
-    <div className="app-shell__navigation">
+    <div className={compactNavigation ? "app-shell__navigation app-shell__navigation--collapsed" : "app-shell__navigation"}>
       <div className="app-shell__brand" aria-label="İkiteknik Bilişim">
         <span className="app-shell__brand-mark" aria-hidden="true">İKİ</span>
         <span><strong>İkiteknik</strong><small>Eğitim Operasyonları</small></span>
@@ -65,7 +72,17 @@ export function AppShell({ children, user, onLogout, activePage, onNavigate }: A
 
   return (
     <Layout className="app-shell">
-      {desktop ? <Layout.Sider width={256} className="app-shell__sider">{navigation}</Layout.Sider> : (
+      {desktop ? (
+        <Layout.Sider
+          width={256}
+          collapsedWidth={80}
+          collapsed={navigationCollapsed}
+          trigger={null}
+          className="app-shell__sider"
+        >
+          {navigation}
+        </Layout.Sider>
+      ) : (
         <Drawer
           className="app-shell__drawer"
           placement="left"
@@ -80,17 +97,27 @@ export function AppShell({ children, user, onLogout, activePage, onNavigate }: A
       <Layout>
         <Layout.Header className="app-shell__header">
           <Flex align="center" justify="space-between" gap={16}>
-            <Flex align="center" gap={12}>
+            <Flex className="app-shell__header-main" align="center" gap={12}>
               {!desktop && (
                 <Button aria-label="Navigasyonu aç" type="text" icon={<MenuOutlined />}
                   onClick={() => setNavigationOpen(true)} />
               )}
-              <div>
+              {desktop && (
+                <Tooltip title={navigationToggleLabel}>
+                  <Button
+                    aria-label={navigationToggleLabel}
+                    className="app-shell__navigation-toggle"
+                    type="text"
+                    icon={navigationCollapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
+                    onClick={() => setNavigationCollapsed((collapsed) => !collapsed)}
+                  />
+                </Tooltip>
+              )}
+              <div className="app-shell__title-block">
                 <Typography.Text className="app-shell__header-label">İKİTEKNİK BİLİŞİM</Typography.Text>
-                <Typography.Title level={4}>Eğitim Operasyon Platformu</Typography.Title>
               </div>
             </Flex>
-            <Flex align="center" gap={8}>
+            <Flex className="app-shell__header-actions" align="center" gap={8}>
               <Badge count={3} size="small">
                 <Button aria-label="Bildirimleri aç" type="text" icon={<BellOutlined />} />
               </Badge>
