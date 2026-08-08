@@ -5,6 +5,7 @@ import { AppShell } from "../../app/layouts/AppShell";
 import type { AuthenticatedUser } from "../../features/auth";
 import { DashboardOverview } from "../../features/dashboard";
 import { CoursesWorkspace } from "../../features/courses";
+import { CalendarWorkspace } from "../../features/calendar";
 import { AuthorizationWorkspace } from "../../features/authorization";
 import { StudentsWorkspace } from "../../features/students";
 
@@ -18,7 +19,7 @@ export function DashboardPage({ user, onLogout }: DashboardPageProps): JSX.Eleme
 
   return (
     <AppShell user={user} onLogout={onLogout} activePage={activePage} onNavigate={setActivePage}>
-      {activePage === "students" ? <StudentsWorkspace user={user} /> : activePage === "courses" ? <CoursesWorkspace user={user} /> : activePage === "authorization" ? <AuthorizationWorkspace currentUser={user} /> : <DashboardOverview />}
+      {activePage === "students" ? <StudentsWorkspace user={user} /> : activePage === "courses" ? <CoursesWorkspace user={user} /> : activePage === "calendar" ? <CalendarWorkspace /> : activePage === "authorization" ? <AuthorizationWorkspace currentUser={user} /> : <DashboardOverview />}
     </AppShell>
   );
 }
