@@ -381,5 +381,8 @@ function Occupancy({ item }: { item: CourseClass }): JSX.Element { return <div c
 function statusOptions(tab: WorkspaceTab) { const values=tab === "courses" ? courseStatusLabels : classStatusLabels; return [{ value: "all", label: "Tüm durumlar" }, ...Object.entries(values).map(([value,label]) => ({ value,label }))]; }
 function formatApiDate(value: string): string { return dateFormatter.format(new Date(`${value}T00:00:00Z`)); }
 function formatOptionalApiDate(value?: string | null): string { return value ? formatApiDate(value) : "-"; }
-function PaymentStatusTag({ status }: { status: PaymentStatus }): JSX.Element { return <Tag color={status === "COMPLETED" ? "success" : "error"}>{paymentStatusLabels[status]}</Tag>; }
+function PaymentStatusTag({ status }: { status: PaymentStatus }): JSX.Element {
+  const completed = status === "COMPLETED";
+  return <Tag className={`courses__payment-status courses__payment-status--${completed ? "completed" : "pending"}`} icon={completed ? <CheckCircleOutlined /> : <ClockCircleOutlined />}>{paymentStatusLabels[status]}</Tag>;
+}
 function StatusTag({ value }: { value: CourseStatus | ClassStatus }): JSX.Element { const label=value in courseStatusLabels ? courseStatusLabels[value as CourseStatus] : classStatusLabels[value as ClassStatus]; const color=value === "ACTIVE" || value === "ENROLLMENT_OPEN" ? "success" : value === "IN_PROGRESS" ? "processing" : value === "DRAFT" || value === "PLANNED" ? "warning" : "default"; return <Tag color={color}>{label}</Tag>; }

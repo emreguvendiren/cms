@@ -12,16 +12,14 @@
   --app-neutral-800: #1e293b;
   --app-neutral-900: #0f172a;
   --app-success: #15803d;
+  --app-success-soft: #f0fdf4;
+  --app-success-border: #bbf7d0;
   --app-warning: #b45309;
+  --app-warning-soft: #fffbeb;
+  --app-warning-border: #fde68a;
   --app-error: #b42318;
   --app-chart-blue: #2563eb;
   --app-chart-gold: #9a6700;
   --app-chart-cyan: #0e7490;
   --app-shadow: 0 24px 64px rgb(15 23 42 / 10%);
-}
-
-.app-theme.ant-tag.ant-tag-success {
-  color: var(--app-surface) !important;
-  background: var(--app-brand);
-  border-color: var(--app-brand);
 }
